@@ -1,0 +1,20 @@
+services:
+
+  # ── Local dev: Vite hot-reload ──────────────────────────────
+  dev:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app                        # mount source for hot reload
+      - /app/node_modules             # keep container's node_modules isolated
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev"
+    profiles: [dev]
+
+  # ── Production preview: nginx serving built assets ──────────
+  prod:
+    build: .
+    ports:
+      - "8080:80"
+    profiles: [prod]
