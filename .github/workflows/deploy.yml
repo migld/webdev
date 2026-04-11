@@ -37,12 +37,12 @@ jobs:
           key: ${{ secrets.DO_SSHKEY }}
           envs: DO_TOKEN,DO_REGISTRY
           script: |
-            echo $DO_TOKEN | docker login registry.digitalocean.com -u token --password-stdin
-            docker pull $DO_REGISTRY/webdev:latest
+            echo "$DO_TOKEN" | docker login registry.digitalocean.com -u token --password-stdin
+            docker pull "$DO_REGISTRY/webdev:latest"
             docker stop webdev || true
             docker rm webdev || true
             docker run -d \
               --name webdev \
               --restart always \
               -p 80:80 \
-              $DO_REGISTRY/webdev:latest
+              "$DO_REGISTRY/webdev:latest"
