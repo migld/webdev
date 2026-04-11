@@ -34,7 +34,7 @@ jobs:
         with:
           host: ${{ secrets.DO_HOST }}
           username: root
-          key: ${{ secrets.DO_SSH_KEY }}
+          key: ${{ secrets.DO_SSHKEY }}
           envs: DO_TOKEN,DO_REGISTRY
           script: |
             echo $DO_TOKEN | docker login registry.digitalocean.com -u token --password-stdin
