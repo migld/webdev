@@ -3,8 +3,6 @@ name: Deploy
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -42,6 +40,6 @@ jobs:
             docker run -d \
               --name webdev \
               --restart always \
-              -p 80:80 \
+              -p 3000:80 \
               ${{ secrets.DO_REGISTRY }}/webdev:latest
           EOF
