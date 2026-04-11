@@ -13,13 +13,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DO_TOKEN }}
-
       - name: Log in to DO Container Registry
-        run: doctl registry login --expiry-seconds 600
+        run: echo ${{ secrets.DO_TOKEN }} | docker login registry.digitalocean.com -u token --password-stdin
 
       - name: Build Docker image
         run: |
@@ -37,13 +32,14 @@ jobs:
           host: ${{ secrets.DO_HOST }}
           username: root
           key: ${{ secrets.DO_SSH_KEY }}
+          envs: DO_TOKEN,DO_REGISTRY
           script: |
-            doctl registry login --expiry-seconds 600
-            docker pull ${{ secrets.DO_REGISTRY }}/webdev:latest
+            echo $DO_TOKEN | docker login registry.digitalocean.com -u token --password-stdin
+            docker pull $DO_REGISTRY/webdev:latest
             docker stop webdev || true
             docker rm webdev || true
             docker run -d \
               --name webdev \
               --restart always \
               -p 80:80 \
-              ${{ secrets.DO_REGISTRY }}/webdev:latest
+              $DO_REGISTRY/webdev:latest
