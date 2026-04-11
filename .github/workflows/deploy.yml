@@ -30,19 +30,18 @@ jobs:
           docker push ${{ secrets.DO_REGISTRY }}/webdev:latest
 
       - name: Deploy to VM
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DO_HOST }}
-          username: root
-          key: ${{ secrets.DO_SSHKEY }}
-          envs: DO_TOKEN,DO_REGISTRY
-          script: |
-            echo "$DO_TOKEN" | docker login registry.digitalocean.com -u token --password-stdin
-            docker pull "$DO_REGISTRY/webdev:latest"
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DO_SSHKEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@${{ secrets.DO_HOST }} << 'EOF'
+            echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u token --password-stdin
+            docker pull ${{ secrets.DO_REGISTRY }}/webdev:latest
             docker stop webdev || true
             docker rm webdev || true
             docker run -d \
               --name webdev \
               --restart always \
               -p 80:80 \
-              "$DO_REGISTRY/webdev:latest"
+              ${{ secrets.DO_REGISTRY }}/webdev:latest
+          EOF
