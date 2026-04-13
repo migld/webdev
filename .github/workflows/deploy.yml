@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to DO Container Registry
+        run: echo ${{ secrets.DO_TOKEN }} | docker login registry.digitalocean.com -u token --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DO_REGISTRY }}/webdev:${{ github.sha }} .
+          docker tag ${{ secrets.DO_REGISTRY }}/webdev:${{ github.sha }} ${{ secrets.DO_REGISTRY }}/webdev:latest
+
+      - name: Push image to registry
+        run: |
+          docker push ${{ secrets.DO_REGISTRY }}/webdev:${{ github.sha }}
+          docker push ${{ secrets.DO_REGISTRY }}/webdev:latest
+
+      - name: Deploy to VM
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DO_SSHKEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@${{ secrets.DO_HOST }} << 'EOF'
+            echo "${{ secrets.DO_TOKEN }}" | docker login registry.digitalocean.com -u token --password-stdin
+            docker pull ${{ secrets.DO_REGISTRY }}/webdev:latest
+            docker stop webdev || true
+            docker rm webdev || true
+            docker run -d \
+              --name webdev \
+              --restart always \
+              -p 3000:80 \
+              ${{ secrets.DO_REGISTRY }}/webdev:latest
+          EOF
